@@ -1,7 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
-
+import fs, { readdir } from 'fs';
+import path from 'path';
+import { request } from 'http';
 (async () => {
 
   // Init the Express application
@@ -30,6 +32,24 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   /**************************************************************************** */
 
   //! END @TODO1
+  app.get("/filteredimage/",async (req,res,next)=>{
+    if(!req.query.image_url){
+      res.status(400).send("please provide an image url");
+    }
+    request(req.query.image_url,async (response)=>{
+      if(((response.headers['content-type']).match(/(image)+\//g)).length != 0){
+      /* It contains 'image/' as the content type */
+      const image = await filterImageFromURL(req.query.image_url);
+      res.sendFile(image,(err)=>{
+        deleteLocalFiles([image]);  
+      });
+      }else{
+      /* no match with 'image/' */
+      res.status(400).send('bad request');
+      }
+    })
+  })
+
   
   // Root Endpoint
   // Displays a simple message to the user
